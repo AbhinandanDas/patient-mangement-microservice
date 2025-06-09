@@ -4,6 +4,7 @@ package com.pm.authservice.service;
 import com.pm.authservice.dto.LoginRequestDTO;
 import com.pm.authservice.model.User;
 import com.pm.authservice.utils.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +23,17 @@ public class AuthService {
     }
 
     public Optional<String> authenticate(LoginRequestDTO loginRequestDTO) {
+        Optional<User> user = userService.findByEmail(loginRequestDTO.getEmail());
+        if (user.isEmpty()) {
+            System.out.println("User not found for email: " + loginRequestDTO.getEmail());
+            return Optional.empty();
+        }
 
-        return userService.findByEmail(loginRequestDTO.getEmail())
-                .filter(u -> passwordEncoder.matches(loginRequestDTO.getPassword(),u.getPassword()))
-                .map(u -> jwtUtil.generateToken(u.getEmail(),u.getRole()));
+        Optional<String> token = userService.findByEmail(loginRequestDTO.getEmail())
+                .filter(u -> passwordEncoder.matches(loginRequestDTO.getPassword(),
+                        u.getPassword()))
+                .map(u -> jwtUtil.generateToken(u.getEmail(), u.getRole()));
+
+        return token;
     }
 }
